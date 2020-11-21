@@ -21,7 +21,6 @@ exports.user_signup= async (req,res)=>{
 
     if (emailExist) return res.status(400).send('Email exist  ') ; 
 
-
     //Hash passwords
     const salt = await bcrypt.genSalt(10);  
     const hashPassword = await bcrypt.hash(req.body.password,salt);
@@ -39,7 +38,7 @@ exports.user_signup= async (req,res)=>{
        skills : skills , 
        image :  image,
        summary : req.body.summary,
-       rule : req.body.rule
+       role : req.body.role
         });
         try {
             const savedUser = await user.save()
@@ -56,27 +55,27 @@ exports.user_login = async (req,res)=>{
    // console.log('login here ') ; 
     const {error} = loginvalidation(res.body) ; 
 
-    if (error) return res.status(400).send(error.details[0].message) ; 
+    if (error) return res.status(400).json({error : error.details[0].message}) ; 
 
     const user = await User.findOne({
         email : req.body.email  
     }) 
-    if (!user) return res.status(400).send("invalid Email"); 
+    if (!user) return res.status(400).json({error : "invalid Email"}); 
     
     
     //PASSWORD IS CORRECT 
     bcrypt.compare( req.body.password , user.password, (err, result) =>{
         if(err){
-             res.status(403).json('Incorrect Password');
+             res.status(403).json({error : 'Incorrect Password'});
         }
         if(result){
             let payload = { user };
             let token = jwt.sign(payload, jwtOptions.secretOrKey);
 
-           return res.status(200).json({ message: 'ok', token , email: user.email  });
+           return res.status(200).json({ message: 'ok', token  , ROLE : user.role });
         }
         else{
-          return  res.status(403).json('incorrect password');
+          return  res.status(403).json({error : 'incorrect password'});
         }
 
     })
@@ -88,8 +87,8 @@ exports.getUsers = async (req,res) =>{
     try {
         
         const users = await user.find({
-            rule : {
-                $not : 'SUPER-ADMIN'
+            role : {
+                $not : 'ROLE_ADMIN'
             }
         }) ;
 
@@ -137,3 +136,25 @@ exports.user_current =   function(req, res) {
         return res.status(200).json(req.userData);
  
 }
+
+    exports.updateProfilePicture = async (req,res) =>{
+        try {
+            let image = null ;
+            if (req.files!=undefined)
+                image = req.files[0].originalname;
+
+            await  Opportunity.updateOne(
+                {_id : req.params.userId} ,
+                 {
+                     $set : {
+                         image : image
+                     }
+                 }
+    
+            )
+        }
+        catch(err){
+            res.json({message: err})
+        }
+    }
+    

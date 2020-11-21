@@ -21,7 +21,7 @@ const registerValidation = (data)=>{
         password : Joi.string()
         .min(6)
         .required() ,
-        rule : Joi.string()
+        role : Joi.string()
         .required() ,
 
         skills : Joi.array() ,
