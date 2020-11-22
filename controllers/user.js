@@ -46,7 +46,7 @@ exports.user_signup= async (req,res)=>{
                 user: savedUser._id 
             }); 
         }catch (err){
-            res.status(400).send(err); 
+            res.status(400).json({error : err}); 
         }
     }
 
