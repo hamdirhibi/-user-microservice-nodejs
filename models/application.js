@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const apllicationSchema = new mongoose.Schema({
     
-    motiviation :  {
+    motivation :  {
         type : String ,
         required : true , 
     },

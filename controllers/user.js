@@ -5,6 +5,11 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const {jwtOptions} = require('../config/jwtOptions');
 const notification = require('../models/notification');
+const Opportunity = require('../models/opportunity');
+const Skill = require('../models/skill');
+const Application = require('../models/application');
+
+var ObjectID = require('mongodb').ObjectID;
 
 
 
@@ -29,8 +34,8 @@ exports.user_signup= async (req,res)=>{
     let image = null ;
     if (req.files!=undefined)
         image = req.files[0].originalname;
-    const user = new User ({
-       name : req.body.fullName ,
+    const usertoSave = new User ({
+       name : req.body.name ,
        address : req.body.address ,
        phone : req.body.phone ,
        email : req.body.email , 
@@ -41,10 +46,13 @@ exports.user_signup= async (req,res)=>{
        role : req.body.role
         });
         try {
-            const savedUser = await user.save()
-            res.send({
-                user: savedUser._id 
-            }); 
+            const user = await usertoSave.save()
+            let payload = { user };
+            let token = jwt.sign(payload, jwtOptions.secretOrKey);
+
+           return res.status(200).json({ message: 'ok', token  , ROLE : user.role });
+
+            
         }catch (err){
             res.status(400).json({error : err}); 
         }
@@ -52,7 +60,7 @@ exports.user_signup= async (req,res)=>{
 
 
 exports.user_login = async (req,res)=>{
-   // console.log('login here ') ; 
+    console.log('login here ') ; 
     const {error} = loginvalidation(res.body) ; 
 
     if (error) return res.status(400).json({error : error.details[0].message}) ; 
@@ -82,15 +90,33 @@ exports.user_login = async (req,res)=>{
 
 }
 
+exports.getUserById = async (req,res) =>{
+    try {
+        
+        const user = await User
+        .findById(req.params.userId)
+        .populate({path:'opportunities',Model : Opportunity })
+        .populate({path:'skills',Model : Skill})
+        .populate({path:'applications',Model : Application})
+
+        
+        res.json(user)
+    }
+    catch(err){
+        res.json({message: err})
+    }
+}
 
 exports.getUsers = async (req,res) =>{
     try {
         
-        const users = await user.find({
+        const users = await User.find(
+            {
             role : {
-                $not : 'ROLE_ADMIN'
+                '$regex' : '^((?!ADMIN).)*$'
             }
-        }) ;
+        }
+        ) ;
 
         res.json(users)
     }
@@ -102,7 +128,7 @@ exports.getUsers = async (req,res) =>{
 
 exports.deleteUser = async (req,res) =>{
     try {
-        const user = await user.findById(req.params.userId); 
+        const user = await User.findById(req.params.userId); 
         
         if (!user) {
             return res
@@ -129,32 +155,61 @@ exports.deleteUser = async (req,res) =>{
 
 
 
-
-
 exports.user_current =   function(req, res) {
   //  console.log('current user here ')  ; 
-        return res.status(200).json(req.userData);
+        return res.status(200).json({user : req.userData.user});
  
 }
 
-    exports.updateProfilePicture = async (req,res) =>{
-        try {
-            let image = null ;
-            if (req.files!=undefined)
-                image = req.files[0].originalname;
+exports.updateProfilePicture = async (req,res) =>{
+    try {
+        let image = null ;
+        if (req.files!=undefined)
+            image = req.files[0].originalname;
 
-            await  Opportunity.updateOne(
-                {_id : req.params.userId} ,
-                 {
-                     $set : {
-                         image : image
-                     }
-                 }
-    
-            )
-        }
-        catch(err){
-            res.json({message: err})
-        }
+        await  User.updateOne(
+            {_id :req.userData.user._id } ,
+                {
+                    $set : {
+                        image : image
+                    }
+                }
+
+        )
     }
-    
+    catch(err){
+        res.json({message: err})
+    }
+}
+exports.updatesAccountData = async (req,res)=>{
+
+    try {
+
+        console.log(req.files[0].path);
+        console.log(req.userData.user._id);
+        
+        const userUpdated=await User.findOneAndUpdate(
+            {_id : ObjectID(req.userData.user._id )} ,
+                {
+                    $set : {
+                        name : req.body.name ,
+                        address : req.body.address ,
+                        phone : req.body.phone ,
+                        email : req.body.email , 
+                        image :  req.files[0].path,
+                        summary : req.body.summary,
+                    }
+                }
+
+        ).exec() ; 
+        res.status(200).json(userUpdated); 
+
+
+    }
+    catch(err){
+        console.log(err)
+        res.status(400).json({message: err})
+    }
+
+
+}

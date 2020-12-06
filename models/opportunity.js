@@ -20,7 +20,7 @@ const opportunitySchema = new mongoose.Schema({
     },
     duration : {
         type : String  , 
-        required : true , 
+        required : false , 
     },
     sallary : {
         type : Number , 
