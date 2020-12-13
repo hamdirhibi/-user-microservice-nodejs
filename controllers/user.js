@@ -94,7 +94,7 @@ exports.getUserById = async (req,res) =>{
     try {
         
         const user = await User
-        .findById(req.params.userId)
+        .findById(req.userData.user_id)
         .populate({path:'opportunities',Model : Opportunity })
         .populate({path:'skills',Model : Skill})
         .populate({path:'applications',Model : Application})
@@ -155,10 +155,20 @@ exports.deleteUser = async (req,res) =>{
 
 
 
-exports.user_current =   function(req, res) {
-  //  console.log('current user here ')  ; 
-        return res.status(200).json({user : req.userData.user});
- 
+exports.user_current = async function(req, res) {
+    try {
+        
+        const user = await User
+        .findById(req.userData.user._id)
+        .populate({path:'opportunities',Model : Opportunity })
+        .populate({path:'skills',Model : Skill})
+        .populate({path:'applications',Model : Application})
+
+        res.json(user)
+    }
+    catch(err){
+        res.json({message: err})
+    } 
 }
 
 exports.updateProfilePicture = async (req,res) =>{
