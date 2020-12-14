@@ -4,7 +4,7 @@ const Joi = require('joi');
 const registerValidation = (data)=>{
     const schema = Joi.object().keys( {
          name : Joi.string()
-        .min(6)
+        .min(5)
         .required(), 
         
         address : Joi.string()
@@ -19,12 +19,11 @@ const registerValidation = (data)=>{
         .email(),
         
         password : Joi.string()
-        .min(6)
+        .min(5)
         .required() ,
         role : Joi.string()
         .required() ,
 
-        skills : Joi.array() ,
         
         summary : Joi.string() 
         .required()

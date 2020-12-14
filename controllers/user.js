@@ -29,8 +29,6 @@ exports.user_signup= async (req,res)=>{
     //Hash passwords
     const salt = await bcrypt.genSalt(10);  
     const hashPassword = await bcrypt.hash(req.body.password,salt);
-    let skills = [];
-    skills = req.body.skills ;
     let image = null ;
     if (req.files!=undefined)
         image = req.files[0].originalname;
@@ -40,7 +38,10 @@ exports.user_signup= async (req,res)=>{
        phone : req.body.phone ,
        email : req.body.email , 
        password : hashPassword ,
-       skills : skills , 
+       skills : [] , 
+       applications : [], 
+       notifications : [] , 
+       opportunities : [] , 
        image :  image,
        summary : req.body.summary,
        role : req.body.role
@@ -162,7 +163,20 @@ exports.user_current = async function(req, res) {
         .findById(req.userData.user._id)
         .populate({path:'opportunities',Model : Opportunity })
         .populate({path:'skills',Model : Skill})
-        .populate({path:'applications',Model : Application})
+        .populate(
+        {
+            path:'applications',
+            Model : Application,
+            populate :{
+                path : 'opportunity' ,
+                model : 'opportunity' , 
+                populate : {
+                    path : 'company' , 
+                    model : 'user'
+                }
+            }
+
+        })
 
         res.json(user)
     }
