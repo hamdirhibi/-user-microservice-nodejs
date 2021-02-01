@@ -95,8 +95,8 @@ exports.getUserById = async (req,res) =>{
     try {
         
         const user = await User
-        .findById(req.userData.user_id)
-        .populate({path:'opportunities',Model : Opportunity })
+        .findById(req.params.userId)
+        .populate({ path:'opportunities',Model : Opportunity })
         .populate({path:'skills',Model : Skill})
         .populate({path:'applications',Model : Application})
 
@@ -209,19 +209,27 @@ exports.updatesAccountData = async (req,res)=>{
 
     try {
 
-        console.log(req.files[0].path);
-        console.log(req.userData.user._id);
-        
+        const user = await User.findById(req.params.userId) ;
+
+        if (!user)
+            res.status(409).json({message : "user doesn't exist"})
+
+        console.log(user)
+        let image = 'NULL' ; 
+        if (req.files[0]) {
+        image = req.files[0].path ; 
+        }
         const userUpdated=await User.findOneAndUpdate(
-            {_id : ObjectID(req.userData.user._id )} ,
+            {_id : ObjectID(req.params.userId)} ,
                 {
                     $set : {
                         name : req.body.name ,
                         address : req.body.address ,
                         phone : req.body.phone ,
                         email : req.body.email , 
-                        image :  req.files[0].path,
+                        image :  image,
                         summary : req.body.summary,
+                        skills : [...user.skills]
                     }
                 }
 
